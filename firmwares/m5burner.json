@@ -1,0 +1,19 @@
+{
+	"name": "Espeon",
+	"description": "Gameboy emulator for the ESP32",
+	"author": "zid, Ryuzaki_MrL",
+	"version": "v1.0",
+	"device": "",
+	"framework": "Arduino IDE",
+	"firmware_category": [
+        {
+            "M5Stack": {
+                "path": "Espeon",
+                "device": [
+                    "M5Stack"
+                ],
+                "default_baud": 921600
+            }
+        }
+    ]
+}
