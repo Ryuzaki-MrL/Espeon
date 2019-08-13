@@ -1,6 +1,7 @@
 ![Espeon](/logo/espeon_dmg_small.png)
 
 Espeon is a gameboy emulator for Espressif's ESP32 SoC.
+
 Originally a fork of [this emulator](https://github.com/lualiliu/esp32-gameboy), it's now being entirely rewritten in order to be more accurate and optimized for the ESP32.
 Old repo containing the rewrite commits can be found [here](https://github.com/Ryuzaki-MrL/m5stack-gameboy).
 
@@ -33,6 +34,7 @@ A precompiled release will be provived for each new version.
 ## Running games
 
 If running on a M5Stack, you'll be presented with a menu where you can choose to either load a ROM from the SD card into the ESP32's flash (maximum of 2MB), or boot up the currently flashed ROM.
+
 If either fails, the bundled ROM will be used instead (maximum of 512 KB).
 
 ## Credits
