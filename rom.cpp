@@ -26,9 +26,10 @@ static const unsigned char header[] = {
 	0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E
 };
 
-bool rom_init(const unsigned char *rombytes)
+bool rom_init(const unsigned char* rombytes)
 {
-	unsigned char checksum = 0;
+	if(!rombytes)
+		return false;
 
 	/* Check Nintendo logo on ROM header */
 	if(memcmp(&rombytes[0x104], header, sizeof(header)) != 0)
@@ -42,6 +43,7 @@ bool rom_init(const unsigned char *rombytes)
 	//rominfo.region    = rombytes[0x14A];
 	//rominfo.version   = rombytes[0x14C];
 
+	unsigned char checksum = 0;
 	for(int i = 0x134; i <= 0x14C; i++)
 		checksum = checksum - rombytes[i] - 1;
 

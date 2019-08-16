@@ -5,8 +5,16 @@
 #include "lcd.h"
 #include "espeon.h"
 #include "menu.h"
-#include "gbrom.h"
 #include "gbbios.h"
+
+/* Uncomment this to include a fallback ROM */
+// #define USE_INTERNAL_ROM
+
+#ifdef USE_INTERNAL_ROM
+	#include "gbrom.h"
+#else
+	const unsigned char* gb_rom = nullptr;
+#endif
 
 void setup()
 {

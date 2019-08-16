@@ -8,6 +8,7 @@ Old repo containing the rewrite commits can be found [here](https://github.com/R
 ## About Espeon
 
 This emulator is being developed primarily with the M5Stack device in mind. You can find more info about it here: https://m5stack.com/
+
 M5Stack Arduino API, M5Stack TreeView library, and M5Stack FACES are required.
 
 If you don't own a M5Stack, feel free to adapt this codebase to your setup.
