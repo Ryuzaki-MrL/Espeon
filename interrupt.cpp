@@ -1,11 +1,11 @@
 #include "interrupt.h"
 #include "cpu.h"
 
-unsigned char IME;
-unsigned char IF;
-unsigned char IE;
+uint8_t IME;
+uint8_t IF;
+uint8_t IE;
 
-static int ime_delay;
+static uint8_t ime_delay;
 
 bool interrupt_flush(void)
 {
@@ -41,7 +41,7 @@ void interrupt_enable(void)
 	ime_delay = 2;
 }
 
-void interrupt(unsigned char n)
+void interrupt(uint8_t n)
 {
 	/* Add this interrupt to pending queue */
 	IF |= n;

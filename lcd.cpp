@@ -13,9 +13,7 @@
 #define MODE0_BOUNDS 	(456/4)
 #define SCANLINE_CYCLES	(456/4)
 
-#define SET_MODE(mode) (lcd_stat = (lcd_stat & 0xFC) | (mode))
-
-static unsigned char* mem;
+static uint8_t* mem;
 
 static uint8_t lcd_line;
 static uint8_t lcd_stat;
@@ -34,7 +32,7 @@ static uint8_t ly_int_flag;
 static uint8_t lcd_mode;
 static uint8_t lcd_stat_tracker;
 
-/* LCD Control */
+/* LCD Context */
 struct LCDC {
 	uint8_t lcd_enabled = 1;
 	uint8_t lcd_line;
@@ -91,7 +89,7 @@ void lcd_reset(void)
 	lcd_cycles = 0;
 }
 
-unsigned char lcd_get_stat(void)
+uint8_t lcd_get_stat(void)
 {
 	return lcd_stat | (ly_int_flag<<2) | lcd_mode;
 }
@@ -113,37 +111,37 @@ static inline void lcd_set_palettes(const LCDC& lcdc)
 	sprpalette2[3] = (n>>6)&3;
 }
 
-void lcd_write_bg_palette(unsigned char n)
+void lcd_write_bg_palette(uint8_t n)
 {
 	lcdc.bg_palette = n;
 }
 
-void lcd_write_spr_palette1(unsigned char n)
+void lcd_write_spr_palette1(uint8_t n)
 {
 	lcdc.spr_palette1 = n;
 }
 
-void lcd_write_spr_palette2(unsigned char n)
+void lcd_write_spr_palette2(uint8_t n)
 {
 	lcdc.spr_palette2 = n;
 }
 
-void lcd_write_scroll_x(unsigned char n)
+void lcd_write_scroll_x(uint8_t n)
 {
 	lcdc.scroll_x = n;
 }
 
-void lcd_write_scroll_y(unsigned char n)
+void lcd_write_scroll_y(uint8_t n)
 {
 	lcdc.scroll_y = n;
 }
 
-int lcd_get_line(void)
+uint8_t lcd_get_line(void)
 {
 	return lcd_line;
 }
 
-void lcd_write_stat(unsigned char c)
+void lcd_write_stat(uint8_t c)
 {
 	ly_int                = !!(c & 0x40);
 	mode2_oam_int         = !!(c & 0x20);
@@ -153,7 +151,7 @@ void lcd_write_stat(unsigned char c)
 	lcd_stat = (c & 0xF8);
 }
 
-void lcd_write_control(unsigned char c)
+void lcd_write_control(uint8_t c)
 {
 	lcdc.bg_enabled            = !!(c & 0x01);
 	lcdc.sprites_enabled       = !!(c & 0x02);
@@ -172,19 +170,19 @@ void lcd_write_control(unsigned char c)
 	}
 }
 
-void lcd_set_ly_compare(unsigned char c)
+void lcd_set_ly_compare(uint8_t c)
 {
 	lcd_ly_compare = c;
 	if(lcdc.lcd_enabled)
 		lcd_match_lyc();
 }
 
-void lcd_set_window_y(unsigned char n)
+void lcd_set_window_y(uint8_t n)
 {
 	lcdc.window_y = n;
 }
 
-void lcd_set_window_x(unsigned char n)
+void lcd_set_window_x(uint8_t n)
 {
 	lcdc.window_x = n;
 }
@@ -240,8 +238,8 @@ static void draw_bg_and_window(fbuffer_t *b, int line, struct LCDC& lcdc)
 
 	for(x = 0; x < 160; x++, offset++)
 	{
-		unsigned int map_select, map_offset, tile_num, tile_addr, xm, ym;
-		unsigned char b1, b2, mask, colour;
+		uint32_t map_select, map_offset, tile_num, tile_addr, xm, ym;
+		uint8_t b1, b2, mask, colour;
 
 		/* Convert LCD x,y into full 256*256 style internal coords */
 		if(windowVisible && x + 7 >= lcdc.window_x)
@@ -290,7 +288,7 @@ static void draw_sprites(fbuffer_t *b, int line, int nsprites, struct sprite *s,
 {
 	for(uint8_t i = 0; i < nsprites; i++)
 	{
-		unsigned int b1, b2, tile_addr, sprite_line, x, offset;
+		uint32_t b1, b2, tile_addr, sprite_line, x, offset;
 
 		/* Sprite is offscreen */
 		if(s[i].x < -7)
@@ -359,8 +357,10 @@ static void render_line(void *arg)
 		/* Draw sprites */
 		if(cline.sprites_enabled) {
 			uint8_t sprcnt = scan_sprites(s, line, cline.sprite_size);
-			if(sprcnt) sort_sprites(s, sprcnt);
-			draw_sprites(b, line, sprcnt, s, cline);
+			if(sprcnt) {
+				sort_sprites(s, sprcnt);
+				draw_sprites(b, line, sprcnt, s, cline);
+			}
 		}
 
 		if(line == 143) {
@@ -373,7 +373,7 @@ static void render_line(void *arg)
 	}
 }
 
-void lcd_cycle(unsigned int cycles)
+void lcd_cycle(uint32_t cycles)
 {	
 	if(!lcdc.lcd_enabled)
 		return;
@@ -411,6 +411,7 @@ void lcd_cycle(unsigned int cycles)
 			lcd_mode = 2;
 			
 			/* Mode 2: Scanning OAM for (X, Y) coordinates of sprites that overlap this line */
+			/* TODO: scan sprites here and queue them alongside the LCD context */
 			// sprcount = scan_sprites(spr, lcd_line, lcdc.sprite_size);
 			// if (sprcount) sort_sprites(spr, sprcount);
 		}
@@ -420,7 +421,7 @@ void lcd_cycle(unsigned int cycles)
 			lcd_stat_tracker = 1;
 			lcd_mode = 3;
 			
-			// send scanline early
+			/* send scanline early */
 			lcdc.lcd_line = lcd_line;
 			xQueueSend(lcdqueue, &lcdc, 0);
 			
@@ -455,7 +456,7 @@ bool lcd_init()
 	mem = mem_get_bytes();
 	
 	lcdqueue = xQueueCreate(143, sizeof(LCDC));
-	if (!lcdqueue)
+	if(!lcdqueue)
 		return false;
 	
 	lcd_write_control(mem[0xFF40]);

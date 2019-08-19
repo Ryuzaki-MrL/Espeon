@@ -2,7 +2,7 @@
 #include <string.h>
 #include "rom.h"
 
-const unsigned char *bytes;
+const uint8_t *bytes;
 
 static s_rominfo rominfo;
 static char romtitle[20] = "";
@@ -17,7 +17,7 @@ static const uint8_t rambank_count[256] = {
 	0, 1, 1, 4, 16, 8
 };
 
-static const unsigned char header[] = {
+static const uint8_t header[] = {
 	0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B,
 	0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D,
 	0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E,
@@ -26,7 +26,7 @@ static const unsigned char header[] = {
 	0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E
 };
 
-bool rom_init(const unsigned char* rombytes)
+bool rom_init(const uint8_t* rombytes)
 {
 	if(!rombytes)
 		return false;
@@ -43,7 +43,7 @@ bool rom_init(const unsigned char* rombytes)
 	//rominfo.region    = rombytes[0x14A];
 	//rominfo.version   = rombytes[0x14C];
 
-	unsigned char checksum = 0;
+	uint8_t checksum = 0;
 	for(int i = 0x134; i <= 0x14C; i++)
 		checksum = checksum - rombytes[i] - 1;
 
@@ -105,7 +105,7 @@ const s_rominfo *rom_get_info(void)
 	return &rominfo;
 }
 
-unsigned int rom_get_ram_size()
+uint32_t rom_get_ram_size()
 {
 	if (rominfo.rom_mapper == MBC2)
 		return 512;
@@ -117,7 +117,7 @@ const char* rom_get_title()
 	return romtitle;
 }
 
-const unsigned char *rom_getbytes(void)
+const uint8_t *rom_getbytes(void)
 {
 	return bytes;
 }

@@ -3,10 +3,11 @@
 #include "interrupt.h"
 #include "espeon.h"
 
-#define set_HL(x) do {unsigned int macro = (x); c.L = macro&0xFF; c.H = macro>>8;} while(0)
-#define set_BC(x) do {unsigned int macro = (x); c.C = macro&0xFF; c.B = macro>>8;} while(0)
-#define set_DE(x) do {unsigned int macro = (x); c.E = macro&0xFF; c.D = macro>>8;} while(0)
-#define set_AF(x) do {unsigned int macro = (x); c.F = macro&0xFF; c.A = macro>>8;} while(0)
+/* 16-bit mode */
+#define set_HL(x) do {uint32_t macro = (x); c.L = macro&0xFF; c.H = macro>>8;} while(0)
+#define set_BC(x) do {uint32_t macro = (x); c.C = macro&0xFF; c.B = macro>>8;} while(0)
+#define set_DE(x) do {uint32_t macro = (x); c.E = macro&0xFF; c.D = macro>>8;} while(0)
+#define set_AF(x) do {uint32_t macro = (x); c.F = macro&0xFF; c.A = macro>>8;} while(0)
 
 #define get_AF() ((c.A<<8) | c.F)
 #define get_BC() ((c.B<<8) | c.C)
@@ -24,7 +25,7 @@
 #define flag_H !!((c.F & 0x20))
 #define flag_C !!((c.F & 0x10))
 
-static const unsigned char opcycles[] = {
+static const uint8_t opcycles[] = {
 /*  0  1  2  3  4  5  6  7		8  9  A  B  C  D  E  F	*/
 	1, 3, 2, 2, 1, 1, 2, 1, 	5, 2, 2, 2, 1, 1, 2, 1, // 0
 	1, 3, 2, 2, 1, 1, 2, 1, 	3, 2, 2, 2, 1, 1, 2, 1, // 1
@@ -46,33 +47,25 @@ static const unsigned char opcycles[] = {
 };
 
 struct CPU {
-	unsigned char H;
-	unsigned char L;
+	uint8_t H, L;
+	uint8_t D, E;
+	uint8_t B, C;
+	uint8_t A, F;
 
-	unsigned char D;
-	unsigned char E;
+	uint16_t SP;
+	uint16_t PC;
 
-	unsigned char B;
-	unsigned char C;
-
-	unsigned char A;
-	unsigned char F;
-
-	unsigned short SP;
-	unsigned short PC;
-
-	unsigned int cycles;
-	unsigned int lastcycles;
+	uint32_t cycles;
+	uint32_t lastcycles;
 };
 
 static struct CPU c;
 static bool halt_bug;
-int halted;
+bool halted;
 
 void cpu_init(void)
 {	
-	if(usebootrom)
-		return;
+	if (usebootrom) return;
 	
 	set_AF(0x01B0);
 	set_BC(0x0013);
@@ -80,13 +73,11 @@ void cpu_init(void)
 	set_HL(0x014D);
 	c.SP = 0xFFFE;
 	c.PC = 0x0100;
-	c.cycles = 0;
-	c.lastcycles = 0;
 }
 
-static void RLC(unsigned char reg)
+static void RLC(uint8_t reg)
 {
-	unsigned char t, old;
+	uint8_t t, old;
 
 	switch(reg)
 	{
@@ -147,9 +138,9 @@ static void RLC(unsigned char reg)
 	set_H(0);
 }
 
-static void RRC(unsigned char reg)
+static void RRC(uint8_t reg)
 {
-	unsigned char t, old;
+	uint8_t t, old;
 
 	switch(reg)
 	{
@@ -209,9 +200,9 @@ static void RRC(unsigned char reg)
 	set_H(0);
 }
 
-static void RL(unsigned char reg)
+static void RL(uint8_t reg)
 {
-	unsigned char t, t2;
+	uint8_t t, t2;
 
 	switch(reg)
 	{
@@ -272,9 +263,9 @@ static void RL(unsigned char reg)
 	set_H(0);
 }
 
-static void RR(unsigned char reg)
+static void RR(uint8_t reg)
 {
-	unsigned char t, t2;
+	uint8_t t, t2;
 
 	switch(reg)
 	{
@@ -334,9 +325,9 @@ static void RR(unsigned char reg)
 	set_H(0);
 }
 
-static void SLA(unsigned char reg)
+static void SLA(uint8_t reg)
 {
-	unsigned char t;
+	uint8_t t;
 
 	switch(reg)
 	{
@@ -389,9 +380,9 @@ static void SLA(unsigned char reg)
 	set_N(0);
 }
 
-static void SRA(unsigned char reg)
+static void SRA(uint8_t reg)
 {
-	unsigned char old, t;
+	uint8_t old, t;
 
 	switch(reg)
 	{
@@ -452,9 +443,9 @@ static void SRA(unsigned char reg)
 	set_N(0);
 }
 
-static void SRL(unsigned char reg)
+static void SRL(uint8_t reg)
 {
-	unsigned char t;
+	uint8_t t;
 
 	switch(reg)
 	{
@@ -507,9 +498,9 @@ static void SRL(unsigned char reg)
 	set_N(0);
 }
 
-static void SWAP(unsigned char reg)
+static void SWAP(uint8_t reg)
 {
-	unsigned char t;
+	uint8_t t;
 
 	switch(reg)
 	{
@@ -551,9 +542,9 @@ static void SWAP(unsigned char reg)
 	}
 }
 
-static void BIT_(unsigned char bit, unsigned char reg)
+static void BIT_(uint8_t bit, uint8_t reg)
 {
-	unsigned char t, f = 0 /* Make GCC happy */;
+	uint8_t t, f = 0 /* Make GCC happy */;
 
 	switch(reg)
 	{
@@ -590,9 +581,9 @@ static void BIT_(unsigned char bit, unsigned char reg)
 	set_H(1);
 }
 
-static void RES(unsigned char bit, unsigned char reg)
+static void RES(uint8_t bit, uint8_t reg)
 {
-	unsigned char t;
+	uint8_t t;
 
 	switch(reg)
 	{
@@ -626,9 +617,9 @@ static void RES(unsigned char bit, unsigned char reg)
 	}
 }
 
-static void SET(unsigned char bit, unsigned char reg)
+static void SET(uint8_t bit, uint8_t reg)
 {
-	unsigned char t;
+	uint8_t t;
 
 	switch(reg)
 	{
@@ -675,11 +666,11 @@ static void SET(unsigned char bit, unsigned char reg)
 10yyyxxx = RES yyy, xxx
 11yyyxxx = SET yyy, xxx
 */
-static void decode_CB(unsigned char t)
+static void decode_CB(uint8_t t)
 {
-	unsigned char reg, opcode, bit;
-	void (*f[])(unsigned char) = {RLC, RRC, RL, RR, SLA, SRA, SWAP, SRL};
-	void (*f2[])(unsigned char, unsigned char) = {BIT_, RES, SET};
+	uint8_t reg, opcode, bit;
+	void (*f[])(uint8_t) = {RLC, RRC, RL, RR, SLA, SRA, SWAP, SRL};
+	void (*f2[])(uint8_t, uint8_t) = {BIT_, RES, SET};
 
 	reg = t&7;
 	opcode = t>>3;
@@ -696,7 +687,7 @@ static void decode_CB(unsigned char t)
 	c.cycles += 2;
 }
 
-void cpu_interrupt(unsigned short vector)
+void cpu_interrupt(uint16_t vector)
 {
 	c.SP -= 2;
 	mem_write_word(c.SP, c.PC);
@@ -705,7 +696,7 @@ void cpu_interrupt(unsigned short vector)
 	halted = 0;
 }
 
-unsigned int cpu_get_cycles(void)
+uint32_t cpu_get_cycles(void)
 {
 	return c.cycles;
 }
@@ -717,16 +708,17 @@ void cpu_print_debug(void)
 		c.A, c.F, c.B, c.C, c.D, c.E, c.H, c.L, c.SP, c.cycles);
 }
 
-unsigned int cpu_cycle(void)
+/* TODO: investigate why blargg's instr_timing test is failing */
+uint32_t cpu_cycle(void)
 {
-	unsigned char b, t;
-	unsigned short s;
-	unsigned int i;
+	uint8_t b, t;
+	uint16_t s;
+	uint32_t i;
 	
 	if(halted)
 	{
 		c.cycles += 1;
-		unsigned int delta = (c.cycles - c.lastcycles);
+		uint32_t delta = (c.cycles - c.lastcycles);
 		c.lastcycles = c.cycles;
 		return delta;
 	}
@@ -2139,8 +2131,7 @@ unsigned int cpu_cycle(void)
 			c.cycles += 3;
 		break;
 		case 0xE2:	/* LD (FF00 + C), A */
-			s = 0xFF00 + c.C;
-			mem_write_byte(s, c.A);
+			mem_write_byte(0xFF00 + c.C, c.A);
 			c.cycles += 2;
 		break;
 		case 0xE5:	/* PUSH HL */
@@ -2273,7 +2264,7 @@ unsigned int cpu_cycle(void)
 		break;
 	}
 
-	unsigned int delta = (c.cycles - c.lastcycles);
+	uint32_t delta = (c.cycles - c.lastcycles);
 	c.lastcycles = c.cycles;
 	return delta;
 }

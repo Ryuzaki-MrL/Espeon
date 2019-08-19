@@ -13,7 +13,7 @@
 #ifdef USE_INTERNAL_ROM
 	#include "gbrom.h"
 #else
-	const unsigned char* gb_rom = nullptr;
+	const uint8_t* gb_rom = nullptr;
 #endif
 
 #ifdef USE_INTERNAL_BIOS
@@ -29,8 +29,8 @@ void setup()
 	menu_init();
 	menu_loop();
 	
-	const unsigned char* rom = espeon_load_rom(menu_get_rompath());
-	if (!rom) rom = (const unsigned char*)gb_rom;
+	const uint8_t* rom = espeon_load_rom(menu_get_rompath());
+	if (!rom) rom = (const uint8_t*)gb_rom;
 	
 	if (!rom_init(rom))
 		espeon_faint("rom_init failed.");
@@ -46,7 +46,7 @@ void setup()
 	espeon_render_border();
 	
 	while(true) {
-		unsigned int cycles = cpu_cycle();
+		uint32_t cycles = cpu_cycle();
 		espeon_update();
 		lcd_cycle(cycles);
 		timer_cycle(cycles);
@@ -55,7 +55,7 @@ void setup()
 
 void loop()
 {
-	unsigned int cycles = cpu_cycle();
+	uint32_t cycles = cpu_cycle();
 	espeon_update();
 	lcd_cycle(cycles);
 	timer_cycle(cycles);

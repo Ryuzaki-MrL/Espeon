@@ -10,104 +10,69 @@
 #include "cpu.h"
 
 bool usebootrom = false;
-static unsigned char *mem;
-static int DMA_pending;
-static int joypad_select_buttons, joypad_select_directions;
+static uint8_t *mem;
+static uint32_t DMA_pending;
+static uint8_t joypad_select_buttons, joypad_select_directions;
 uint8_t btn_directions, btn_faces;
 static const s_rominfo *rominfo;
-static const unsigned char *rom;
+static const uint8_t *rom;
 
-unsigned char* mem_get_bytes()
+uint8_t* mem_get_bytes()
 {
 	return mem;
 }
 
 /* TODO: every system should be reading and writing
 	directly to the memory, not the other way around */
-unsigned char mem_get_byte(unsigned short i)
+uint8_t mem_get_byte(uint16_t i)
 {
-	unsigned long elapsed;
-	unsigned char mask = 0;
-
 	if(DMA_pending && i < 0xFF80)
 	{
-		elapsed = cpu_get_cycles() - DMA_pending;
-		if(elapsed >= 160)
+		uint32_t elapsed = cpu_get_cycles() - DMA_pending;
+		if(elapsed >= 160) {
 			DMA_pending = 0;
-		else
-		{
+		} else {
 			return mem[0xFE00+elapsed];
 		}
 	}
 
 	if(i >= 0x4000 && i < 0x8000)
 		return rombank[i - 0x4000];
-	
-	// else if (i >= 0x8000 && i < 0xA000)
-		// return ((mem[0xFF41]&0x3)==3) ? 0xFF : mem[i];
-	
+
 	else if (i >= 0xA000 && i < 0xC000)
 		return mbc_read_ram(i);
-	
-	// else if (i >= 0xFE00 && i < 0xFE9F)
-		// return ((mem[0xFF41]&0x2)==1) ? 0xFF : mem[i];
-
-	// else if(i < 0xFF00)
-		// return mem[i];
 
 	else switch(i)
 	{
-		case 0xFF00:	/* Joypad */
+		case 0xFF00: {	/* Joypad */
+			uint8_t mask = 0;
 			if(!joypad_select_buttons)
 				mask = btn_faces;
 			if(!joypad_select_directions)
 				mask = btn_directions;
-			return 0xC0 | (0xF^mask) | (joypad_select_buttons | joypad_select_directions);
-		break;
-		case 0xFF04:
-			return timer_get_div();
-		break;
-		case 0xFF05:
-			return timer_get_counter();
-		break;
-		case 0xFF06:
-			return timer_get_modulo();
-		break;
-		case 0xFF07:
-			return timer_get_tac();
-		break;
-		case 0xFF0F:
-			return 0xE0 | IF;
-		break;
-		case 0xFF41:
-			return lcd_get_stat();
-		break;
-		case 0xFF44:
-			return lcd_get_line();
-		break;
-		case 0xFF4D:	/* GBC speed switch */
-			return 0xFF;
-		break;
-		case 0xFFFF:
-			return IE;
-		break;
+			return (0xC0) | (joypad_select_buttons | joypad_select_directions) | (mask);
+		}
+		case 0xFF04: return timer_get_div();
+		case 0xFF05: return timer_get_counter();
+		case 0xFF06: return timer_get_modulo();
+		case 0xFF07: return timer_get_tac();
+		case 0xFF0F: return 0xE0 | IF;
+		case 0xFF41: return lcd_get_stat();
+		case 0xFF44: return lcd_get_line();
+		case 0xFF4D: return 0xFF; /* GBC speed switch */
+		case 0xFFFF: return IE;
 	}
 
 	return mem[i];
 }
 
-void mem_write_byte(unsigned short d, unsigned char i)
+void mem_write_byte(uint16_t d, uint8_t i)
 {
+	/* ROM */
 	if (d < 0x8000) {
 		mbc_write_rom(d, i);
 		return;
 	}
-	
-	/* VRAM */
-	// if (d >= 0x8000 && d < 0xA000) {
-		// if ((mem[0xFF41] & 0x3) == 3)
-			// return;
-	// }
 	
 	/* SRAM */
 	else if (d >= 0xA000 && d < 0xC000) {
@@ -156,8 +121,8 @@ void mem_write_byte(unsigned short d, unsigned char i)
 		break;
 		case 0xFF46: { /* OAM DMA */
 			/* Check if address overlaps with RAM or ROM */
-			unsigned short addr = i * 0x100;
-			const unsigned char* src = mem;
+			uint16_t addr = i * 0x100;
+			const uint8_t* src = mem;
 			if (addr >= 0x4000 && addr < 0x8000) {
 				src = rombank;
 				addr -= 0x4000;
@@ -188,7 +153,7 @@ void mem_write_byte(unsigned short d, unsigned char i)
 			lcd_set_window_x(i);
 		break;
 		case 0xFF50:
-			memcpy(&mem[0x0000], &rom[0x0000], 0x100);
+			memcpy(&mem[0x0000], &rom[0x0000], 0x100); /* Lock bootROM */
 		break;
 		case 0xFFFF:
 			IE = i;
@@ -198,9 +163,9 @@ void mem_write_byte(unsigned short d, unsigned char i)
 	mem[d] = i;
 }
 
-bool mmu_init(const unsigned char* bootrom)
+bool mmu_init(const uint8_t* bootrom)
 {
-	mem = (unsigned char *)calloc(1, 0x10000);
+	mem = (uint8_t *)calloc(1, 0x10000);
 	if (!mem)
 		return false;
 	

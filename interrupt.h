@@ -1,11 +1,13 @@
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
-extern unsigned char IME;
-extern unsigned char IF;
-extern unsigned char IE;
+#include <stdint.h>
 
-void interrupt(unsigned char);
+extern uint8_t IME;
+extern uint8_t IF;
+extern uint8_t IE;
+
+void interrupt(uint8_t);
 void interrupt_enable(void);
 bool interrupt_flush(void);
 

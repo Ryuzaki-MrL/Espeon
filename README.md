@@ -2,8 +2,7 @@
 
 Espeon is a gameboy emulator for Espressif's ESP32 SoC.
 
-Originally a fork of [this emulator](https://github.com/lualiliu/esp32-gameboy), it's now being entirely rewritten in order to be more accurate and optimized for the ESP32.
-Old repo containing the rewrite commits can be found [here](https://github.com/Ryuzaki-MrL/m5stack-gameboy).
+This project started out as a [rewrite](https://github.com/Ryuzaki-MrL/m5stack-gameboy) in order to be more accurate and optimized for the ESP32.
 
 ## About Espeon
 
@@ -22,9 +21,11 @@ If you don't own a M5Stack, feel free to adapt this codebase to your setup.
 
 ## Compiling Espeon
 
+To compile for the M5Stack, you'll need to:
+
 * Set up your Arduino IDE for the M5Stack (https://docs.m5stack.com/#/en/api)
-* You'll need a copy of the gameboy's bootrom as a const array called gb_bios
-* Copy some gameboy ROMs over to the SD card, or drag and drop a ROM into rom2h.bat (bundled ROM can't exceed 512 KB)
+* Get a copy of the gameboy's bootrom as a const array called gb_bios
+* Copy some gameboy ROMs over to the SD card, or drag and drop a ROM into rom2h.bat (the latter can't exceed 512 KB)
 * Run espeon.ino
 * Compile the sketch and upload it to the board
 
@@ -40,10 +41,10 @@ If either fails, the bundled ROM will be used instead (maximum of 512 KB).
 
 ## Credits
 
-* [zid](https://github.com/zid), for the original core (some code is still present on this repo)
-* [lualiliu](https://github.com/lualiliu), base Arduino code, ROM bundle script
-* [lovyan](https://github.com/lovyan03), for the M5Stack TreeView UI library and example code
-* [natsuki-o-bento](https://www.deviantart.com/natsukio-bento), for the espeon used in the logo (comissioned)
+* Code structure inspired by [zid](https://github.com/zid).
+* Base Arduino code and ROM bundle script by [lualiliu](https://github.com/lualiliu).
+* M5Stack TreeView UI library and example code by [lovyan](https://github.com/lovyan03).
+* Espeon artwork by [natsuki-o-bento](https://www.deviantart.com/natsukio-bento).
 
 ## Features
 

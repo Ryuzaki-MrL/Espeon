@@ -1,11 +1,13 @@
 #ifndef CPU_H
 #define CPU_H
 
-extern int halted;
+#include <stdint.h>
+
+extern bool halted;
 
 void cpu_init(void);
-unsigned int cpu_cycle(void);
-unsigned int cpu_get_cycles(void);
-void cpu_interrupt(unsigned short);
+uint32_t cpu_cycle(void);
+uint32_t cpu_get_cycles(void);
+void cpu_interrupt(uint16_t);
 
 #endif

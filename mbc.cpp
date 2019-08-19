@@ -5,16 +5,16 @@
 #define SET_ROM_BANK(n)		(rombank = &rom[((n) & (rom_banks - 1)) * 0x4000])
 #define SET_RAM_BANK(n)		(rambank = &ram[((n) & (ram_banks - 1)) * 0x2000])
 
-static unsigned int curr_rom_bank = 1;
-static unsigned char rom_banks;
-static unsigned int curr_ram_bank = 0;
-static unsigned char ram_banks;
+static uint32_t curr_rom_bank = 1;
+static uint8_t rom_banks;
+static uint32_t curr_ram_bank = 0;
+static uint8_t ram_banks;
 static bool ram_select;
 static bool ram_enabled;
-static const unsigned char *rom;
-static unsigned char *ram;
-const unsigned char *rombank;
-unsigned char *rambank;
+static const uint8_t *rom;
+static uint8_t *ram;
+const uint8_t *rombank;
+uint8_t *rambank;
 static const s_rominfo *rominfo;
 
 MBCReader mbc_read_ram;
@@ -31,7 +31,7 @@ bool mbc_init()
 	ram_banks = rominfo->ram_banks;
 	
 	int ram_size = rom_get_ram_size();
-	ram = (unsigned char *)calloc(1, ram_size < 1024*8 ? 1024*8 : ram_size);
+	ram = (uint8_t *)calloc(1, ram_size < 1024*8 ? 1024*8 : ram_size);
 	if (!ram)
 		return false;
 	
@@ -63,13 +63,13 @@ bool mbc_init()
 	return true;
 }
 
-unsigned char* mbc_get_ram()
+uint8_t* mbc_get_ram()
 {
 	return ram;
 }
 
 
-void MBC3_write_ROM(unsigned short d, unsigned char i)
+void MBC3_write_ROM(uint16_t d, uint8_t i)
 {
 	if(d < 0x2000)
 		ram_enabled = ((i & 0x0F) == 0x0A);
@@ -84,28 +84,28 @@ void MBC3_write_ROM(unsigned short d, unsigned char i)
 	}
 	
 	else if(d < 0x6000) {
-		// TODO: select RTC
+		/* TODO: select RTC */
 		curr_ram_bank = i & 0x07;
 		SET_RAM_BANK(curr_ram_bank);
 	}
 }
 
-void MBC3_write_RAM(unsigned short d, unsigned char i)
+void MBC3_write_RAM(uint16_t d, uint8_t i)
 {
-	// TODO: write to RTC
+	/* TODO: write to RTC */
 	if (!ram_enabled)
 		return;
 	rambank[d - 0xA000] = i;
 	//sram_modified = true;
 }
 
-unsigned char MBC3_read_RAM(unsigned short i)
+uint8_t MBC3_read_RAM(uint16_t i)
 {
 	return ram_enabled ? rambank[i - 0xA000] : 0xFF;
 }
 
 
-void MBC1_write_ROM(unsigned short d, unsigned char i)
+void MBC1_write_ROM(uint16_t d, uint8_t i)
 {
 	if(d < 0x2000)
 		ram_enabled = ((i & 0x0F) == 0x0A);
@@ -143,7 +143,7 @@ void MBC1_write_ROM(unsigned short d, unsigned char i)
 	}
 }
 
-void MBC1_write_RAM(unsigned short d, unsigned char i)
+void MBC1_write_RAM(uint16_t d, uint8_t i)
 {
 	if (!ram_enabled)
 		return;
@@ -151,7 +151,7 @@ void MBC1_write_RAM(unsigned short d, unsigned char i)
 	//sram_modified = true;
 }
 
-unsigned char MBC1_read_RAM(unsigned short i)
+uint8_t MBC1_read_RAM(uint16_t i)
 {
 	return ram_enabled ? rambank[i - 0xA000] : 0xFF;
 }

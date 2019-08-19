@@ -2,12 +2,12 @@
 #include "timer.h"
 #include "interrupt.h"
 
-static unsigned int ticks;
-static unsigned char started;
-static unsigned int speed = 1024;
-static unsigned char TAC;
-static unsigned int TIMA;
-static unsigned char TMA;
+static uint32_t ticks;
+static uint8_t started;
+static uint32_t speed = 1024;
+static uint8_t TAC;
+static uint32_t TIMA;
+static uint8_t TMA;
 static uint16_t divider;
 
 void timer_reset_div(void)
@@ -15,32 +15,32 @@ void timer_reset_div(void)
 	divider = 0;
 }
 
-unsigned char timer_get_div(void)
+uint8_t timer_get_div(void)
 {
 	return (divider >> 8);
 }
 
-void timer_set_counter(unsigned char v)
+void timer_set_counter(uint8_t v)
 {
 	TIMA = v;
 }
 
-unsigned char timer_get_counter(void)
+uint8_t timer_get_counter(void)
 {
 	return TIMA;
 }
 
-void timer_set_modulo(unsigned char v)
+void timer_set_modulo(uint8_t v)
 {
 	TMA = v;
 }
 
-unsigned char timer_get_modulo(void)
+uint8_t timer_get_modulo(void)
 {
 	return TMA;
 }
 
-void timer_set_tac(unsigned char v)
+void timer_set_tac(uint8_t v)
 {
 	const int speeds[] = {1024, 16, 64, 256};
 	TAC = v;
@@ -48,12 +48,12 @@ void timer_set_tac(unsigned char v)
 	speed = speeds[v&3];
 }
 
-unsigned char timer_get_tac(void)
+uint8_t timer_get_tac(void)
 {
 	return TAC;
 }
 
-void timer_cycle(unsigned int delta)
+void timer_cycle(uint32_t delta)
 {
 	delta *= 4;
 	divider += delta;
