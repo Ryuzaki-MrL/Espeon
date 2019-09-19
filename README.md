@@ -24,8 +24,8 @@ If you don't own a M5Stack, feel free to adapt this codebase to your setup.
 To compile for the M5Stack, you'll need to:
 
 * Set up your Arduino IDE for the M5Stack (https://docs.m5stack.com/#/en/api)
-* Get a copy of the gameboy's bootrom as a const array called gb_bios
-* Copy some gameboy ROMs over to the SD card, or drag and drop a ROM into rom2h.bat (the latter can't exceed 512 KB)
+* (OPTIONAL) Get a copy of the gameboy's bootrom as a const array called gb_bios
+* (OPTIONAL) If you wish to bundle Espeon with a ROM, drag and drop the ROM file into rom2h.bat (max size of 512 KB)
 * Run espeon.ino
 * Compile the sketch and upload it to the board
 
@@ -55,7 +55,6 @@ If either fails, the bundled ROM will be used instead (maximum of 512 KB).
 ### TODO:
 
 * Rewrite CPU/LR35902 code
-* Streamline GB memory access
 * Audio emulation
 * Object-oriented approach
 * SRAM autosaving (currently needs a button press)

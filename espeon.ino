@@ -6,21 +6,7 @@
 #include "espeon.h"
 #include "menu.h"
 
-/* Uncomment this to include a fallback ROM */
-// #define USE_INTERNAL_ROM
-#define USE_INTERNAL_BIOS
-
-#ifdef USE_INTERNAL_ROM
-	#include "gbrom.h"
-#else
-	const uint8_t* gb_rom = nullptr;
-#endif
-
-#ifdef USE_INTERNAL_BIOS
-	#include "gbbios.h"
-#else
-	const uint8_t* gb_bios = nullptr;
-#endif
+#include "gbfiles.h"
 
 void setup()
 {
@@ -35,7 +21,7 @@ void setup()
 	if (!rom_init(rom))
 		espeon_faint("rom_init failed.");
 	
-	if (!mmu_init(gb_bios))
+	if (!mmu_init((const uint8_t*)gb_bios))
 		espeon_faint("mmu_init failed.");
 	
 	if (!lcd_init())
@@ -43,7 +29,7 @@ void setup()
 	
 	cpu_init();
 	
-	espeon_render_border();
+	espeon_render_border((const uint8_t*)gb_border, gb_border_size);
 	
 	while(true) {
 		uint32_t cycles = cpu_cycle();

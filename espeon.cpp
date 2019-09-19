@@ -9,7 +9,6 @@
 #include "interrupt.h"
 #include "mbc.h"
 #include "rom.h"
-#include "gbborder.h"
 
 #define PARTITION_ROM (esp_partition_subtype_t(0x40))
 #define MAX_ROM_SIZE (2*1024*1024)
@@ -32,21 +31,20 @@ volatile bool sram_modified = false;
 
 uint16_t palette[] = { 0xFFFF, 0xAAAA, 0x5555, 0x2222 };
 
-// QueueHandle_t fbqueue;
-
-// static void videoTask(void *arg) {
-	// fbuffer_t* fb = NULL;
-	// int x = (320 - GAMEBOY_WIDTH)  >> 1;
-	// int y = (240 - GAMEBOY_HEIGHT) >> 1;
-	// while(true) {
-		// xQueueReceive(fbqueue, &fb, portMAX_DELAY);
-		// M5.Lcd.drawBitmap(x, y, GAMEBOY_WIDTH, GAMEBOY_HEIGHT, fb);
-	// }
-// }
-
-void espeon_render_border()
+void espeon_render_border(const uint8_t* img, uint32_t size)
 {
-	M5.Lcd.drawBitmap(0, 0, 320, 240, (const uint16_t*)gbborder);
+	M5.Lcd.clear();
+	//M5.Lcd.drawBitmap(0, 0, 320, 240, (const uint16_t*)gbborder);
+	
+	/* Border file always overwrites the internal border if present */
+	/* TODO: select JPEG file from settings menu */
+	File test = SD.open("/gbborder.jpg", FILE_READ);
+	if (test) {
+		test.close();
+		M5.Lcd.drawJpgFile(SD, "/gbborder.jpg", 0, 0, 320, 240);
+	} else if (img) {
+		M5.Lcd.drawJpg(img, size, 0, 0, 320, 240);
+	}
 }
 
 static void espeon_request_sd_write()
@@ -64,16 +62,13 @@ void espeon_init(void)
 	ledcDetachPin(SPEAKER_PIN);
 	
 	pinMode(JOYPAD_INPUT, INPUT_PULLUP);
-	pinMode(BUTTON_A_PIN, INPUT_PULLUP);
-	attachInterrupt(BUTTON_A_PIN, espeon_request_sd_write, FALLING);
+	pinMode(BUTTON_C_PIN, INPUT_PULLUP);
+	attachInterrupt(BUTTON_C_PIN, espeon_request_sd_write, FALLING);
 	
 	pixels = (fbuffer_t*)calloc(GAMEBOY_HEIGHT * GAMEBOY_WIDTH, sizeof(fbuffer_t));
 	
 	const uint32_t pal[] = {0xEFFFDE, 0xADD794, 0x525F73, 0x183442}; // Default greenscale palette
 	espeon_set_palette(pal);
-	
-	// fbqueue = xQueueCreate(1, sizeof(fbuffer_t*));
-	// xTaskCreatePinnedToCore(&videoTask, "videoTask", 2048, NULL, 5, NULL, 0);
 }
 
 void espeon_update(void)
@@ -129,7 +124,6 @@ void espeon_end_frame(void)
 			espeon_save_sram(mbc_get_ram(), rom_get_ram_size());
 		spi_lock = 0;
 	}
-	//xQueueSend(fbqueue, &pixels, 0);
 	M5.Lcd.drawBitmap(CENTER_X, CENTER_Y, GAMEBOY_WIDTH, GAMEBOY_HEIGHT, pixels);
 }
 
