@@ -10,20 +10,15 @@
 #include "cpu.h"
 
 bool usebootrom = false;
-static uint8_t *mem;
+uint8_t *mem = nullptr;
+static uint8_t *echo;
 static uint32_t DMA_pending;
 static uint8_t joypad_select_buttons, joypad_select_directions;
 uint8_t btn_directions, btn_faces;
 static const s_rominfo *rominfo;
 static const uint8_t *rom;
 
-uint8_t* mem_get_bytes()
-{
-	return mem;
-}
 
-/* TODO: every system should be reading and writing
-	directly to the memory, not the other way around */
 uint8_t mem_get_byte(uint16_t i)
 {
 	if(DMA_pending && i < 0xFF80)
@@ -41,6 +36,9 @@ uint8_t mem_get_byte(uint16_t i)
 
 	else if (i >= 0xA000 && i < 0xC000)
 		return mbc_read_ram(i);
+	
+	else if (i >= 0xE000 && i < 0xFE00)
+		return echo[i];
 
 	else switch(i)
 	{
@@ -53,9 +51,6 @@ uint8_t mem_get_byte(uint16_t i)
 			return (0xC0) | (joypad_select_buttons | joypad_select_directions) | (mask);
 		}
 		case 0xFF04: return timer_get_div();
-		case 0xFF05: return timer_get_counter();
-		case 0xFF06: return timer_get_modulo();
-		case 0xFF07: return timer_get_tac();
 		case 0xFF0F: return 0xE0 | IF;
 		case 0xFF41: return lcd_get_stat();
 		case 0xFF44: return lcd_get_line();
@@ -69,16 +64,16 @@ uint8_t mem_get_byte(uint16_t i)
 void mem_write_byte(uint16_t d, uint8_t i)
 {
 	/* ROM */
-	if (d < 0x8000) {
+	if (d < 0x8000)
 		mbc_write_rom(d, i);
-		return;
-	}
 	
 	/* SRAM */
-	else if (d >= 0xA000 && d < 0xC000) {
+	else if (d >= 0xA000 && d < 0xC000)
 		mbc_write_ram(d, i);
-		return;
-	}
+	
+	/* ECHO */
+	else if (d >= 0xE000 && d < 0xFE00)
+		echo[d] = i;
 
 	else switch(d)
 	{
@@ -86,39 +81,15 @@ void mem_write_byte(uint16_t d, uint8_t i)
 			joypad_select_buttons = i&0x20;
 			joypad_select_directions = i&0x10;
 		break;
-		case 0xFF04:
-			timer_reset_div();
-		break;
-		case 0xFF05:
-			timer_set_counter(i);
-		break;
-		case 0xFF06:
-			timer_set_modulo(i);
-		break;
-		case 0xFF07:
-			timer_set_tac(i);
-		break;
-		case 0xFF0F:
-			IF = i;
-		break;
-		case 0xFF40:
-			lcd_write_control(i);
-		break;
-		case 0xFF41:
-			lcd_write_stat(i);
-		break;
-		case 0xFF42:
-			lcd_write_scroll_y(i);
-		break;
-		case 0xFF43:
-			lcd_write_scroll_x(i);
-		break;
-		case 0xFF44:
-			lcd_reset();
-		break;
-		case 0xFF45:
-			lcd_set_ly_compare(i);
-		break;
+		case 0xFF04: timer_reset_div(); break;
+		case 0xFF07: timer_set_tac(i); break;
+		case 0xFF0F: IF = i; break;
+		case 0xFF40: lcd_write_control(i); break;
+		case 0xFF41: lcd_write_stat(i); break;
+		case 0xFF42: lcd_write_scroll_y(i); break;
+		case 0xFF43: lcd_write_scroll_x(i); break;
+		case 0xFF44: lcd_reset(); break;
+		case 0xFF45: lcd_set_ly_compare(i); break;
 		case 0xFF46: { /* OAM DMA */
 			/* Check if address overlaps with RAM or ROM */
 			uint16_t addr = i * 0x100;
@@ -135,32 +106,18 @@ void mem_write_byte(uint16_t d, uint8_t i)
 			/* Copy 0xA0 bytes from source to OAM */
 			memcpy(&mem[0xFE00], &src[addr], 0xA0);
 			DMA_pending = cpu_get_cycles();
+			break;
 		}
-		break;
-		case 0xFF47:
-			lcd_write_bg_palette(i);
-		break;
-		case 0xFF48:
-			lcd_write_spr_palette1(i);
-		break;
-		case 0xFF49:
-			lcd_write_spr_palette2(i);
-		break;
-		case 0xFF4A:
-			lcd_set_window_y(i);
-		break;
-		case 0xFF4B:
-			lcd_set_window_x(i);
-		break;
-		case 0xFF50:
-			memcpy(&mem[0x0000], &rom[0x0000], 0x100); /* Lock bootROM */
-		break;
-		case 0xFFFF:
-			IE = i;
-		break;
+		case 0xFF47: lcd_write_bg_palette(i); break;
+		case 0xFF48: lcd_write_spr_palette1(i); break;
+		case 0xFF49: lcd_write_spr_palette2(i); break;
+		case 0xFF4A: lcd_set_window_y(i); break;
+		case 0xFF4B: lcd_set_window_x(i); break;
+		case 0xFF50: memcpy(&mem[0x0000], &rom[0x0000], 0x100); break; /* Lock bootROM */
+		case 0xFFFF: IE = i; break;
+
+		default: mem[d] = i; break;
 	}
-	
-	mem[d] = i;
 }
 
 bool mmu_init(const uint8_t* bootrom)
@@ -173,6 +130,7 @@ bool mmu_init(const uint8_t* bootrom)
 		return false;
 	
 	rom = rom_getbytes();
+	echo = mem + 0xC000 - 0xE000;
 	
 	if (bootrom) {
 		memcpy(&mem[0x0000], &bootrom[0x0000], 0x100);
@@ -181,8 +139,10 @@ bool mmu_init(const uint8_t* bootrom)
 		return true;
 	}
 	
+	// First ROM bank is always in RAM
 	memcpy(&mem[0x0000], &rom[0x0000], 0x4000);
 
+	// Default values if bootrom is not present
 	mem[0xFF10] = 0x80;
 	mem[0xFF11] = 0xBF;
 	mem[0xFF12] = 0xF3;

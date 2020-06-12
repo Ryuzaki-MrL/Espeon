@@ -13,7 +13,9 @@
 #define MODE0_BOUNDS 	(456/4)
 #define SCANLINE_CYCLES	(456/4)
 
-static uint8_t* mem;
+struct sprite {
+	int16_t y, x, tile, flags;
+};
 
 static uint8_t lcd_line;
 static uint8_t lcd_stat;
@@ -53,13 +55,6 @@ struct LCDC {
 };
 
 static LCDC lcdc;
-
-struct sprite {
-	int16_t y, x, tile, flags;
-};
-
-static sprite spr[10];
-static uint8_t sprcount;
 
 static uint8_t bgpalette[] = {3, 2, 1, 0};
 static uint8_t sprpalette1[] = {0, 1, 2, 3};
@@ -251,7 +246,6 @@ static void draw_bg_and_window(fbuffer_t *b, int line, struct LCDC& lcdc)
 		else {
 			if(!lcdc.bg_enabled)
 			{
-				//b[offset] = 0;
 				b[offset] = palette[bgpalette[0]];
 				continue;
 			}
@@ -279,7 +273,6 @@ static void draw_bg_and_window(fbuffer_t *b, int line, struct LCDC& lcdc)
 		mask = 128>>(xm&7);
 		colour = (!!(b2&mask)<<1) | !!(b1&mask);
 		
-		//b[offset] = bgpalette[colour];
 		b[offset] = palette[bgpalette[colour]];
 	}
 }
@@ -411,9 +404,9 @@ void lcd_cycle(uint32_t cycles)
 			lcd_mode = 2;
 			
 			/* Mode 2: Scanning OAM for (X, Y) coordinates of sprites that overlap this line */
-			/* TODO: scan sprites here and queue them alongside the LCD context */
-			// sprcount = scan_sprites(spr, lcd_line, lcdc.sprite_size);
-			// if (sprcount) sort_sprites(spr, sprcount);
+			// lcdc.sprcount = scan_sprites(lcdc.spr, lcd_line, lcdc.sprite_size);
+			// if (lcdc.sprcount)
+				// sort_sprites(lcdc.spr, lcdc.sprcount);
 		}
 	}
 	else if(lcd_cycles < MODE3_BOUNDS) {
@@ -452,9 +445,7 @@ void lcd_cycle(uint32_t cycles)
 }
 
 bool lcd_init()
-{
-	mem = mem_get_bytes();
-	
+{	
 	lcdqueue = xQueueCreate(143, sizeof(LCDC));
 	if(!lcdqueue)
 		return false;
