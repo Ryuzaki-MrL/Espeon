@@ -23,7 +23,7 @@ If you don't own a M5Stack, feel free to adapt this codebase to your setup.
 
 To compile for the M5Stack, you'll need to:
 
-* Set up your Arduino IDE for the M5Stack (https://docs.m5stack.com/#/en/api)
+* [Set up your Arduino IDE for the M5Stack](https://docs.m5stack.com/#/en/arduino/arduino_development)
 * (OPTIONAL) Get a copy of the gameboy's bootrom as a const array called gb_bios
 * (OPTIONAL) If you wish to bundle Espeon with a ROM, drag and drop the ROM file into rom2h.bat (max size of 512 KB)
 * Run espeon.ino
