@@ -22,5 +22,6 @@ void espeon_render_border(const uint8_t* img, uint32_t size);
 void espeon_save_sram(uint8_t* ram, uint32_t size);
 void espeon_load_sram(uint8_t* ram, uint32_t size);
 const uint8_t* espeon_load_rom(const char* path);
+const uint8_t* espeon_load_bootrom(const char* path);
 
 #endif

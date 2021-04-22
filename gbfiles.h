@@ -3,7 +3,10 @@
 
 /* Uncomment this to include a fallback ROM */
 // #define USE_INTERNAL_ROM
-#define USE_INTERNAL_BIOS
+
+/* Uncomment if including a bios on compile */
+//#define USE_INTERNAL_BIOS
+
 #define USE_INTERNAL_BORDER
 
 #ifdef USE_INTERNAL_ROM

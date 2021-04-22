@@ -133,6 +133,7 @@ void espeon_save_sram(uint8_t* ram, uint32_t size)
 	
 	static char path[20];
 	sprintf(path, "/%.8s.bin", rom_get_title());
+	
 	File sram = SD.open(path, FILE_WRITE);
 	if (sram) {
 		sram.seek(0);
@@ -147,12 +148,28 @@ void espeon_load_sram(uint8_t* ram, uint32_t size)
 	
 	static char path[20];
 	sprintf(path, "/%.8s.bin", rom_get_title());
+	
 	File sram = SD.open(path, FILE_READ);
 	if (sram) {
 		sram.seek(0);
 		sram.read(ram, size);
 		sram.close();
 	}
+}
+
+const uint8_t* espeon_load_bootrom(const char* path)
+{
+	static uint8_t bootrom[256];
+	
+	File bf = SD.open(path, FILE_READ);
+	if (bf) {
+		bf.seek(0);
+		bf.read(bootrom, sizeof(bootrom));
+		bf.close();
+		return bootrom;
+	}
+	
+	return nullptr;
 }
 
 static inline const uint8_t* espeon_get_last_rom(const esp_partition_t* part)

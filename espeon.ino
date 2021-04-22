@@ -18,10 +18,13 @@ void setup()
 	const uint8_t* rom = espeon_load_rom(menu_get_rompath());
 	if (!rom) rom = (const uint8_t*)gb_rom;
 	
+	const uint8_t* bootrom = espeon_load_bootrom("/gb_bios.bin");
+	if (!bootrom) bootrom = (const uint8_t*)gb_bios;
+	
 	if (!rom_init(rom))
 		espeon_faint("rom_init failed.");
 	
-	if (!mmu_init((const uint8_t*)gb_bios))
+	if (!mmu_init(bootrom))
 		espeon_faint("mmu_init failed.");
 	
 	if (!lcd_init())
